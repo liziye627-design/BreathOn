@@ -1,0 +1,114 @@
+diff --git a/t5_os/ap/components/bk_wifi/src/wifi_api.c b/t5_os/ap/components/bk_wifi/src/wifi_api.c
+index 11d9ce8..a6cf320 100755
+--- a/t5_os/ap/components/bk_wifi/src/wifi_api.c
++++ b/t5_os/ap/components/bk_wifi/src/wifi_api.c
+@@ -24,6 +24,7 @@
+ #include <common/bk_err.h>
+ #include <stdint.h>
+ #include <stdbool.h>
++#include <string.h>
+ #include <os/str.h>
+ #include <os/mem.h>
+ #include <os/os.h>
+@@ -678,11 +679,28 @@ bk_err_t bk_wifi_sta_get_link_status(wifi_link_status_t *link_status)
+     ret = wifi_send_com_api_cmd(STA_GET_LINK_STATUS, 1, (uint32_t)buffer_to_ipc);
+ 
+     os_memcpy(link_status, buffer_to_ipc, len);
++    /* The ABI includes password storage. Do not release an unsanitized copy. */
++    volatile uint8_t *secret = buffer_to_ipc;
++    for (uint32_t i = 0; i < len; ++i) secret[i] = 0;
+     os_free(buffer_to_ipc);
+ 
+     return ret;
+ }
+ 
++/* Association proof for application persistence/static-IP guards. CP obtains
++ * this SSID from rw_msg_get_bss_info, not the requested station configuration. */
++bool breathon_wifi_associated_ssid_matches(const char *ssid)
++{
++    wifi_link_status_t actual = {0};
++    bk_err_t result = bk_wifi_sta_get_link_status(&actual);
++    bool matches = result == BK_OK && ssid && ssid[0] && actual.aid > 0 &&
++                   (actual.state == WIFI_LINKSTATE_STA_CONNECTED || actual.state == WIFI_LINKSTATE_STA_GOT_IP) &&
++                   memchr(actual.ssid, 0, sizeof(actual.ssid)) && !strcmp(actual.ssid, ssid);
++    volatile uint8_t *secret = (volatile uint8_t *)&actual;
++    for (size_t i = 0; i < sizeof(actual); ++i) secret[i] = 0;
++    return matches;
++}
++
+ bk_err_t bk_wifi_get_channel(void)
+ {
+     uint8_t channel = 0;
+diff --git a/t5_os/ap/components/bk_wifi/src/wifi_cli.c b/t5_os/ap/components/bk_wifi/src/wifi_cli.c
+index 0ebd535..3244943 100755
+--- a/t5_os/ap/components/bk_wifi/src/wifi_cli.c
++++ b/t5_os/ap/components/bk_wifi/src/wifi_cli.c
+@@ -1,6 +1,7 @@
+ #include "conv_utf8_pub.h"
+ #include "wdrv_main.h"
+ #include "wdrv_cntrl.h"
++#include "wdrv_tx.h"
+ #include "wdrv_ipc.h"
+ #include "wifi_api.h"
+ #include "pbuf.h"
+@@ -9,6 +10,7 @@
+ #include "net.h"
+ #include "lwip/err.h"
+ #include "lwip/netif.h"
++#include "lwip/ip4_addr.h"
+ #include <components/netif.h>
+ #include "lwip/ping.h"
+ #include "wifi_demo.h"
+@@ -312,6 +314,41 @@ static int wifi_filter_cb(const uint8_t *data, uint32_t len, const wifi_frame_in
+ 	return BK_OK;
+ }
+ 
++/* The CP owns the station IP stack. AP-only ipconfig changes no live CP state.
++ * Complete the advertised CLI using its existing BK_CMD_SET_NET_INFO handler;
++ * a genuine CP GOT_IP event remains responsible for updating the AP link. */
++int breathon_set_cp_ipv4(const char *ip, const char *mask, const char *gateway, const char *dns)
++{
++    const char *values[] = {ip, mask, gateway, dns};
++    struct {
++        wdrv_cmd_hdr header;
++        char address[4][NETIF_IP4_STR_LEN];
++    } request = {0};
++    wdrv_cmd_cfm confirm = {0};
++    ip4_addr_t parsed;
++    _Static_assert(sizeof(request) == 12 + 4 * 16, "Pinned CP netinfo ABI changed");
++    for (int i = 0; i < 4; ++i) {
++        if (!values[i]) return -2;
++        size_t length = strlen(values[i]);
++        if (length == 0 || length >= NETIF_IP4_STR_LEN ||
++            !ip4addr_aton(values[i], &parsed)) return -2;
++        memcpy(request.address[i], values[i], length);
++    }
++    request.header.cmd_id = BK_CMD_SET_NET_INFO;
++    request.header.len = sizeof(request.address);
++    confirm.waitcfm = WDRV_CMD_WAITCFM;
++    return wdrv_tx_msg((uint8_t *)&request, sizeof(request), &confirm, NULL);
++}
++static void breathon_set_netinfo(int argc, char **argv)
++{
++    if (argc != 6) {
++        printf("BREATHON_STATIC_IP invalid arguments\r\n");
++        return;
++    }
++    int result = breathon_set_cp_ipv4(argv[2], argv[3], argv[4], argv[5]);
++    printf("BREATHON_STATIC_IP request_rc=%d\r\n", result);
++}
++
+ static void wdrv_handle_cli_commmand(char *pcWriteBuffer, int xWriteBufferLen, int argC, char **argV)
+ {
+     if(argC <= 1) {
+@@ -326,7 +363,9 @@ static void wdrv_handle_cli_commmand(char *pcWriteBuffer, int xWriteBufferLen, i
+     }
+ 
+     /// Wi-Fi command
+-    if (!strcasecmp(argV[1], "scan_wifi")) {
++    if (!strcasecmp(argV[1], "set_netinfo")) {
++        breathon_set_netinfo(argC, argV);
++    } else if (!strcasecmp(argV[1], "scan_wifi")) {
+         //bk_ioctl_scan_wifi_cmd();
+     } else if (!strcasecmp(argV[1], "connect")) {
+         char *ssid = NULL;

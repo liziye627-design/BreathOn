@@ -1,0 +1,577 @@
+diff --git a/apps/tuya.ai/your_chat_bot/CMakeLists.txt b/apps/tuya.ai/your_chat_bot/CMakeLists.txt
+index a591cb1..86e9132 100755
+--- a/apps/tuya.ai/your_chat_bot/CMakeLists.txt
++++ b/apps/tuya.ai/your_chat_bot/CMakeLists.txt
+@@ -40,7 +40,9 @@ else()
+ # APP_SRCS
+ aux_source_directory(${APP_PATH}/src APP_SRCS)
+ 
+-set(APP_INC ${APP_PATH}/include)
++aux_source_directory(${APP_PATH}/src/breathon BREATHON_SRCS)
++list(APPEND APP_SRCS ${BREATHON_SRCS})
++set(APP_INC ${APP_PATH}/include ${APP_PATH}/src/breathon)
+ 
+ ########################################
+ # Target Configure
+diff --git a/apps/tuya.ai/your_chat_bot/src/app_chat_bot.c b/apps/tuya.ai/your_chat_bot/src/app_chat_bot.c
+index 1d611ec..4e368d2 100644
+--- a/apps/tuya.ai/your_chat_bot/src/app_chat_bot.c
++++ b/apps/tuya.ai/your_chat_bot/src/app_chat_bot.c
+@@ -10,7 +10,11 @@
+ #include "netmgr.h"
+ 
+ #include "ai_chat_main.h"
++#include "ai_ui_manage.h"
+ #include "app_chat_bot.h"
++#include "app_breathon_audio.h"
++#include "app_breathon_realtime.h"
++#include "app_breathon_ble.h"
+ #include "app_lowpower.h"
+ 
+ #if defined(ENABLE_WIFI) && (ENABLE_WIFI == 1)
+@@ -114,6 +118,8 @@ static void __display_status_tm_cb(TIMER_ID timer_id, void *arg)
+ 
+ static void __ai_chat_handle_event(AI_NOTIFY_EVENT_T *event)
+ {
++    app_breathon_audio_event(event);
++    app_breathon_realtime_event(event);
+     app_lowpower_feed_event(event); // power mgmt: activity / key-mode gate
+ 
+     switch(event->type) {
+@@ -133,20 +139,39 @@ static void __ai_chat_handle_event(AI_NOTIFY_EVENT_T *event)
+ 
+ void app_chat_bot_set_online(BOOL_T online)
+ {
++    if (BREATHON_PRESENTATION_ONLY) return;
+     app_lowpower_set_online(online);
+ }
+ 
++extern OPERATE_RET app_breathon_ui_register(void);
++extern OPERATE_RET app_breathon_wifi_register(void);
++
+ OPERATE_RET app_chat_bot_init(void)
+ {
+     OPERATE_RET rt = OPRT_OK;
+ 
+     AI_CHAT_MODE_CFG_T ai_chat_cfg = {
+-        .default_mode = AI_CHAT_MODE_HOLD, // push-to-talk; idle low-power gates on this mode
++        .default_mode = AI_CHAT_MODE_FREE, // Keep the existing hands-free product interaction.
+         .default_vol  = 70,
+         .evt_cb       = __ai_chat_handle_event,
+     };
++    TUYA_CALL_ERR_RETURN(app_breathon_ui_register());
++    if (BREATHON_PRESENTATION_ONLY) {
++        TUYA_CALL_ERR_RETURN(ai_ui_init());
++        TUYA_CALL_ERR_RETURN(app_breathon_wifi_register());
++        TUYA_CALL_ERR_LOG(app_breathon_ble_init());
++        tal_sw_timer_create(__display_status_tm_cb, NULL, &sg_disp_status_tm);
++        tal_sw_timer_start(sg_disp_status_tm, DISP_NET_STATUS_TIME, TAL_TIMER_CYCLE);
++        PR_NOTICE("BREATHON_PRESENTATION: local script; microphone=off realtime=off audio=off");
++        return OPRT_OK;
++    }
+     TUYA_CALL_ERR_RETURN(ai_chat_init(&ai_chat_cfg));
+ 
++    TUYA_CALL_ERR_LOG(app_breathon_audio_init());
++    TUYA_CALL_ERR_LOG(app_breathon_realtime_init());
++    TUYA_CALL_ERR_LOG(app_breathon_ble_init());
++    TUYA_CALL_ERR_LOG(app_breathon_wifi_register());
++
+     app_lowpower_init();
+ 
+ #if defined(ENABLE_COMP_AI_DISPLAY) && (ENABLE_COMP_AI_DISPLAY == 1)
+diff --git a/src/ai_components/ai_agent/src/ai_agent.c b/src/ai_components/ai_agent/src/ai_agent.c
+index 529ebec..6e80c40 100755
+--- a/src/ai_components/ai_agent/src/ai_agent.c
++++ b/src/ai_components/ai_agent/src/ai_agent.c
+@@ -58,8 +58,11 @@ static uint16_t __s_audio_codec_type = AI_AUDIO_CODEC_MP3;
+ @param eid Event ID
+ @return OPERATE_RET Operation result
+ */
++extern bool ai_audio_local_capture_active(void) __attribute__((weak));
++
+ OPERATE_RET __ai_agent_event_cb(AI_EVENT_TYPE type, AI_PACKET_PT ptype, AI_EVENT_ID eid)
+ {
++    if (ai_audio_local_capture_active && ai_audio_local_capture_active()) return OPRT_OK;
+     PR_DEBUG("ai agent -> recv event type: %d packet_tp:%d", type, ptype);
+ 
+     if (AI_EVENT_START == type) {
+@@ -129,6 +132,7 @@ OPERATE_RET __ai_agent_media_attr_cb(AI_BIZ_ATTR_INFO_T *attr)
+ */
+ OPERATE_RET __ai_agent_media_data_cb(AI_PACKET_PT type, char *data, uint32_t len, uint32_t total_len)
+ {
++    if (ai_audio_local_capture_active && ai_audio_local_capture_active()) return OPRT_OK;
+     /* TAL_PR_NOTICE(" ai agent -> recv media type %d", type); */
+     OPERATE_RET rt = OPRT_OK;
+     if(type == AI_PT_AUDIO) {
+@@ -158,7 +162,8 @@ OPERATE_RET __ai_agent_media_data_cb(AI_PACKET_PT type, char *data, uint32_t len
+ @return OPERATE_RET Operation result
+ */
+ OPERATE_RET __ai_agent_text_cb(AI_TEXT_TYPE_E type, cJSON *root, BOOL_T eof)
+-{    
++{
++    if (ai_audio_local_capture_active && ai_audio_local_capture_active()) return OPRT_OK;    
+     return ai_text_process(type, root, eof);
+ }
+ 
+@@ -169,6 +174,7 @@ OPERATE_RET __ai_agent_text_cb(AI_TEXT_TYPE_E type, cJSON *root, BOOL_T eof)
+ */
+ OPERATE_RET __ai_agent_alert_cb(AI_ALERT_TYPE_E type)
+ {
++    if (ai_audio_local_capture_active && ai_audio_local_capture_active()) return OPRT_OK;
+     /* PR_DEBUG(" ai agent -> alert type: %d", type); */
+     if (type == AT_PLEASE_AGAIN) {
+         PR_DEBUG("ignored alert: %d", type);
+diff --git a/src/ai_components/ai_main/src/ai_chat_main.c b/src/ai_components/ai_main/src/ai_chat_main.c
+index 77e77d3..060d491 100755
+--- a/src/ai_components/ai_main/src/ai_chat_main.c
++++ b/src/ai_components/ai_main/src/ai_chat_main.c
+@@ -198,13 +198,15 @@ static void __ai_chat_mode_task(void *args)
+ @param datalen Audio data length
+ @return int Operation result
+ */
++__attribute__((weak)) bool ai_audio_local_capture_active(void) { return false; }
++
+ static int __ai_audio_output(uint8_t *data, uint16_t datalen)
+ {
+     OPERATE_RET rt = OPRT_OK;
+     uint64_t   pts = 0;
+     uint64_t   timestamp = 0;
+ 
+-    if(false == sg_ai_agent_inited) {
++    if(ai_audio_local_capture_active() || false == sg_ai_agent_inited) {
+         return OPRT_OK;
+     }
+ 
+@@ -251,6 +253,7 @@ int __ai_vad_change_evt(void *data)
+ */
+ static void __ai_button_function_cb(char *name, TDL_BUTTON_TOUCH_EVENT_E event, void *arg)
+ {
++    if (ai_audio_local_capture_active()) return;
+     PR_DEBUG("ai chat button event: %d", event);
+ 
+     if(TDL_BUTTON_PRESS_DOUBLE_CLICK == event) {
+diff --git a/src/ai_components/ai_main/src/ai_chat_ui.c b/src/ai_components/ai_main/src/ai_chat_ui.c
+index d30cb47..bd4813f 100644
+--- a/src/ai_components/ai_main/src/ai_chat_ui.c
++++ b/src/ai_components/ai_main/src/ai_chat_ui.c
+@@ -66,6 +66,14 @@ static void __ai_chat_disp_mode_state(AI_MODE_STATE_E state)
+         status = ai_ui_locale_tr(LISTENING, "Listening");
+ #else
+         status = LISTENING;
++#endif
++        ai_ui_disp_msg(AI_UI_DISP_STATUS, (uint8_t *)status, strlen(status));
++        break;
++    case AI_MODE_STATE_THINK:
++#if defined(ENABLE_AI_CHAT_GUI_GUIDED_WECHAT) && (ENABLE_AI_CHAT_GUI_GUIDED_WECHAT == 1)
++        status = ai_ui_locale_tr(THINKING, "Thinking");
++#else
++        status = THINKING;
+ #endif
+         ai_ui_disp_msg(AI_UI_DISP_STATUS, (uint8_t *)status, strlen(status));
+         break;
+diff --git a/src/tal_bluetooth/src/tal_bluetooth.c b/src/tal_bluetooth/src/tal_bluetooth.c
+index 8403f14..b5f2f00 100755
+--- a/src/tal_bluetooth/src/tal_bluetooth.c
++++ b/src/tal_bluetooth/src/tal_bluetooth.c
+@@ -48,6 +48,7 @@ static uint16_t tkl_ble_common_connect_handle = TKL_BLE_GATT_INVALID_HANDLE;
+ /**< Use TAL Definitions, TAL Only Support One GATT Link at one time, follow
+  * Bluetooth Spec. */
+ static TAL_BLE_EVT_FUNC_CB tal_ble_event_callback;
++__attribute__((weak)) int breathon_ble_intercept(TAL_BLE_EVT_PARAMS_T *evt) { (void)evt; return 0; }
+ #if (TY_HS_BLE_ROLE_CENTRAL)
+ static TAL_BLE_PEER_INFO_T tal_ble_peer = {0};
+ #endif
+@@ -196,6 +197,9 @@ static void tkl_ble_kernel_gap_event_callback(TKL_BLE_GAP_PARAMS_EVT_T *p_event)
+         return;
+     }
+ 
++    if (breathon_ble_intercept(&tal_event)) {
++        return;
++    }
+     if (tal_ble_event_callback) {
+         tal_ble_event_callback(&tal_event);
+     }
+@@ -380,6 +384,9 @@ static void tkl_ble_kernel_gatt_event_callback(TKL_BLE_GATT_PARAMS_EVT_T *p_even
+         return;
+     }
+ 
++    if (breathon_ble_intercept(&tal_event)) {
++        return;
++    }
+     if (tal_ble_event_callback) {
+         tal_ble_event_callback(&tal_event);
+     }
+diff --git a/src/tuya_cloud_service/cloud/tuya_iot.c b/src/tuya_cloud_service/cloud/tuya_iot.c
+index 816451b..e13f341 100644
+--- a/src/tuya_cloud_service/cloud/tuya_iot.c
++++ b/src/tuya_cloud_service/cloud/tuya_iot.c
+@@ -39,6 +39,7 @@
+ #include "tuya_lan.h"
+ #if defined(ENABLE_WIFI) && (ENABLE_WIFI == 1)
+ #include "netcfg.h"
++#include "netconn_wifi.h"
+ #endif
+ #include "netmgr.h"
+ #include "tuya_health.h"
+@@ -68,6 +69,17 @@ typedef enum {
+ 
+ static tuya_iot_client_t *s_iot_client_solo;
+ 
++/* The Wi-Fi boot restore may stop provisioning on another task. Route cloud
++ * teardown through the same complete stop/destroy lifecycle lock. */
++static int stop_provisioning(int type)
++{
++#if defined(ENABLE_WIFI) && (ENABLE_WIFI == 1)
++    return netconn_wifi_stop_config_type(type);
++#else
++    return netcfg_stop(type);
++#endif
++}
++
+ /* -------------------------------------------------------------------------- */
+ /*                          Internal utils functions                          */
+ /* -------------------------------------------------------------------------- */
+@@ -778,10 +790,10 @@ int tuya_iot_destroy(tuya_iot_client_t *client)
+ 
+     tuya_lan_disable();
+ #if defined(ENABLE_WIFI) && (ENABLE_WIFI == 1)
+-    netcfg_stop(NETCFG_TUYA_WIFI_AP);
++    stop_provisioning(NETCFG_TUYA_WIFI_AP);
+ #endif
+ #if defined(ENABLE_BLUETOOTH) && (ENABLE_BLUETOOTH == 1)
+-    netcfg_stop(NETCFG_TUYA_BLE);
++    stop_provisioning(NETCFG_TUYA_BLE);
+     tuya_ble_deinit();
+ #endif
+ 
+@@ -1153,10 +1165,10 @@ int tuya_iot_activated_data_remove(tuya_iot_client_t *client)
+     client->is_activated = false;
+     tuya_lan_disable();
+ #if defined(ENABLE_WIFI) && (ENABLE_WIFI == 1)
+-    netcfg_stop(NETCFG_TUYA_WIFI_AP);
++    stop_provisioning(NETCFG_TUYA_WIFI_AP);
+ #endif
+ #if defined(ENABLE_BLUETOOTH) && (ENABLE_BLUETOOTH == 1)
+-    netcfg_stop(NETCFG_TUYA_BLE);
++    stop_provisioning(NETCFG_TUYA_BLE);
+ #endif
+     /* Clean client local data */
+     dp_schema_delete(client->activate.devid);
+diff --git a/src/tuya_cloud_service/netcfg/ap_netcfg.c b/src/tuya_cloud_service/netcfg/ap_netcfg.c
+index 10cc32c..7748700 100755
+--- a/src/tuya_cloud_service/netcfg/ap_netcfg.c
++++ b/src/tuya_cloud_service/netcfg/ap_netcfg.c
+@@ -982,16 +982,22 @@ static int ap_netcfg_stop(int type)
+  * @param[in] netcfg_args Pointer to the network configuration arguments.
+  * @return Returns the result of the netcfg_register function.
+  */
++void ap_netcfg_abort_init(void)
++{
++    if (s_ap_netcfg && !s_ap_netcfg->thread) ap_netcfg_free();
++}
++
+ int ap_netcfg_init(netcfg_args_t *netcfg_args)
+ {
+-    //! simple wait for reset
+-    while (s_ap_netcfg != NULL) {
+-        tal_system_sleep(200);
+-    }
++    /* The caller may hold the configuration lifecycle lock. Never wait here
++     * for an old AP whose completion callback needs that same lock to exit. */
++    if (s_ap_netcfg != NULL) return OPRT_RESOURCE_NOT_READY;
+ 
+     TUYA_CHECK_NULL_RETURN(s_ap_netcfg = tal_malloc(sizeof(ap_netcfg_t)), OPRT_MALLOC_FAILED);
+     memset(s_ap_netcfg, 0, sizeof(ap_netcfg_t));
+     memcpy(&s_ap_netcfg->netcfg_args, netcfg_args, sizeof(netcfg_args_t));
+ 
+-    return netcfg_register(NETCFG_TUYA_WIFI_AP, ap_netcfg_start, ap_netcfg_stop);
++    int result = netcfg_register(NETCFG_TUYA_WIFI_AP, ap_netcfg_start, ap_netcfg_stop);
++    if (result != OPRT_OK) ap_netcfg_abort_init();
++    return result;
+ }
+diff --git a/src/tuya_cloud_service/netcfg/ap_netcfg.h b/src/tuya_cloud_service/netcfg/ap_netcfg.h
+index b60e917..72a8b8c 100755
+--- a/src/tuya_cloud_service/netcfg/ap_netcfg.h
++++ b/src/tuya_cloud_service/netcfg/ap_netcfg.h
+@@ -36,6 +36,8 @@ extern "C" {
+  * tuya_error_code.h
+  */
+ int ap_netcfg_init(netcfg_args_t *netcfg);
++/* Called with the configuration lifecycle lock after start submission fails. */
++void ap_netcfg_abort_init(void);
+ 
+ /**
+  * @brief get the SoftAP hotspot info used while AP netcfg is running
+diff --git a/src/tuya_cloud_service/netcfg/netcfg.c b/src/tuya_cloud_service/netcfg/netcfg.c
+index edbc41a..aedffde 100755
+--- a/src/tuya_cloud_service/netcfg/netcfg.c
++++ b/src/tuya_cloud_service/netcfg/netcfg.c
+@@ -27,6 +27,7 @@
+ #include "tuya_list.h"
+ #include "tal_workq_service.h"
+ #include "tal_event.h"
++#include "netconn_wifi.h"
+ 
+ #define COUNT_OF(X) ((sizeof(X)) / (sizeof(X[0])))
+ 
+@@ -39,17 +40,25 @@ typedef struct {
+ 
+ static bool isInited = false;
+ static netcfg_session_t *p_netcfg_session = NULL;
++static uint32_t netcfg_generation;
++typedef struct { int type; uint32_t generation; } netcfg_start_job_t;
++netcfg_handler_t *netcfg_get_handler(int type);
+ 
+ static void __netcfg_start_msg_cb(void *msg)
+ {
+-    netcfg_handler_t *pHandler = NULL;
+-    pHandler = (netcfg_handler_t *)msg;
+-
+-    int ret = pHandler->start(pHandler->type, pHandler->netcfg_finish_cb, pHandler->args);
+-    if (ret == OPRT_OK) {
+-        pHandler->isStarted = true;
++    /* Own a generation-tagged value, never a queued pointer into a session
++     * which ALL stop can destroy after this task has already been dequeued. */
++    netcfg_start_job_t *job = msg;
++    if (netconn_wifi_config_lock() == OPRT_OK) {
++        netcfg_handler_t *pHandler = job->generation == netcfg_generation ? netcfg_get_handler(job->type) : NULL;
++        if (pHandler && !pHandler->isStarted) {
++            int ret = pHandler->start(pHandler->type, pHandler->netcfg_finish_cb, pHandler->args);
++            if (ret == OPRT_OK) pHandler->isStarted = true;
++            PR_DEBUG("start 0x%x ret:%d", pHandler->type, ret);
++        }
++        netconn_wifi_config_unlock();
+     }
+-    PR_DEBUG("start 0x%x ret:%d", pHandler->type, ret);
++    tal_free(job);
+ }
+ 
+ /**
+@@ -169,6 +178,7 @@ int netcfg_init(void)
+             return OPRT_MALLOC_FAILED;
+         }
+         INIT_LIST_HEAD(&p_netcfg_session->listHead);
++        ++netcfg_generation;
+     }
+ 
+     return OPRT_OK;
+@@ -188,7 +198,8 @@ int netcfg_uninit(void)
+     if (p_netcfg_session) {
+         P_LIST_HEAD pPos, pNext;
+         netcfg_handler_t *phandler;
+-        tal_workq_cancel(WORKQ_HIGHTPRI, __netcfg_start_msg_cb, NULL);
++        /* Queued jobs own their small payload and drain as stale no-ops.
++         * Cancellation would discard those payloads without freeing them. */
+ 
+         tuya_list_for_each_safe(pPos, pNext, &(p_netcfg_session->listHead))
+         {
+@@ -284,7 +295,12 @@ int netcfg_start(int type, netcfg_finish_cb_t netcfg_finish_cb, void *args)
+     } else {
+         pHandler->netcfg_finish_cb = netcfg_finish_cb;
+         pHandler->args = args;
+-        tal_workq_schedule(WORKQ_HIGHTPRI, __netcfg_start_msg_cb, pHandler);
++        netcfg_start_job_t *job = tal_malloc(sizeof(*job));
++        if (!job) return OPRT_MALLOC_FAILED;
++        job->type = type; job->generation = netcfg_generation;
++        int result = tal_workq_schedule(WORKQ_HIGHTPRI, __netcfg_start_msg_cb, job);
++        if (result != OPRT_OK) tal_free(job);
++        return result;
+     }
+ 
+     return OPRT_OK;
+diff --git a/src/tuya_cloud_service/netmgr/netconn_wifi.c b/src/tuya_cloud_service/netmgr/netconn_wifi.c
+index 3f7f3c1..b7cae22 100755
+--- a/src/tuya_cloud_service/netmgr/netconn_wifi.c
++++ b/src/tuya_cloud_service/netmgr/netconn_wifi.c
+@@ -111,6 +111,8 @@ OPERATE_RET __netconn_wifi_connect(void)
+     return tal_workq_schedule(WORKQ_SYSTEM, __netconn_wifi_connect_process, wifi_msg);
+ }
+ 
++#include "netconn_wifi_request.inc"
++
+ OPERATE_RET __netconn_wifi_disconnect(void)
+ {
+     netmgr_conn_wifi_t *wifi = &s_netmgr_wifi;
+@@ -240,7 +242,7 @@ static OPERATE_RET __wifi_link_activete_cb(void *data)
+ 
+     PR_DEBUG("__wifi_link_activete_cb");
+     // stop all netcfg
+-    rt = netcfg_stop(NETCFG_STOP_ALL_CFG_MODULE);
++    rt = netconn_wifi_stop_config();
+ 
+     return rt;
+ }
+@@ -248,6 +250,9 @@ static OPERATE_RET __wifi_link_activete_cb(void *data)
+ OPERATE_RET __netconn_wifi_netcfg_finish(int type, netcfg_info_t *info)
+ {
+     netmgr_conn_wifi_t *netmgr_wifi = &s_netmgr_wifi;
++    OPERATE_RET rt = OPRT_OK;
++
++    TUYA_CALL_ERR_RETURN(wifi_request_begin(true));
+ 
+     // save wifi info
+     // clear first: this is a persistent global, and a shorter new SSID/pwd must
+@@ -260,9 +265,10 @@ OPERATE_RET __netconn_wifi_netcfg_finish(int type, netcfg_info_t *info)
+     memcpy(netmgr_wifi->conn.wifi_conn_info.pswd, info->passwd,
+            info->p_len > WIFI_PASSWD_LEN ? WIFI_PASSWD_LEN : info->p_len);
+     __netconn_wifi_info_set(&netmgr_wifi->conn.wifi_conn_info);
++    wifi_request_end();
+ 
+     // stop all netcfg
+-    netcfg_stop(NETCFG_STOP_ALL_CFG_MODULE);
++    netconn_wifi_stop_config();
+ 
+     tuya_binding_info_t binding;
+     memset(&binding, 0, sizeof(tuya_binding_info_t));
+@@ -281,6 +287,7 @@ OPERATE_RET __netconn_wifi_netcfg_finish(int type, netcfg_info_t *info)
+ int __netconn_activate_token_get(tuya_iot_config_t *config)
+ {
+     int rt = OPRT_OK;
++    bool ap_owned = false;
+ 
+     netmgr_conn_wifi_t *netmgr_wifi = &s_netmgr_wifi;
+     netmgr_wifi->netcfg.uuid = (char *)config->uuid;
+@@ -289,21 +296,46 @@ int __netconn_activate_token_get(tuya_iot_config_t *config)
+     TUYA_CALL_ERR_LOG(
+         tal_event_subscribe(EVENT_LINK_ACTIVATE, "wifi", __wifi_link_activete_cb, SUBSCRIBE_TYPE_ONETIME));
+ 
++    /* Registration/start must not reuse a session while another task is
++     * stopping and destroying it. The queued start callbacks run afterwards. */
++retry_config:
++    TUYA_CALL_ERR_RETURN(netconn_wifi_config_lock());
+     // init netcfg
+-    netcfg_init();
++    rt = netcfg_init();
++    if (rt != OPRT_OK) goto config_failed;
+     TAL_NETWORK_CARD_TYPE_E active_type = tal_network_card_get_active_type();
+     if (netmgr_wifi->netcfg.type & TUYA_NETMGR_NETCFG_AP && active_type != TAL_NET_TYPE_AT_MODEM) {
+-        ap_netcfg_init(&netmgr_wifi->netcfg);
+-        netcfg_start(NETCFG_TUYA_WIFI_AP, __netconn_wifi_netcfg_finish, NULL);
++        rt = ap_netcfg_init(&netmgr_wifi->netcfg);
++        if (rt == OPRT_RESOURCE_NOT_READY) {
++            netconn_wifi_config_unlock();
++            tal_system_sleep(200);
++            goto retry_config;
++        }
++        if (rt != OPRT_OK) goto config_failed;
++        ap_owned = true;
++        rt = netcfg_start(NETCFG_TUYA_WIFI_AP, __netconn_wifi_netcfg_finish, NULL);
++        if (rt != OPRT_OK) goto config_failed;
+     }
+ 
+ #ifdef ENABLE_BLUETOOTH
+     if (netmgr_wifi->netcfg.type & TUYA_NETMGR_NETCFG_BLE) {
+-        ble_netcfg_init(&netmgr_wifi->netcfg);
+-        netcfg_start(NETCFG_TUYA_BLE, __netconn_wifi_netcfg_finish, NULL);
++        rt = ble_netcfg_init(&netmgr_wifi->netcfg);
++        if (rt != OPRT_OK) goto config_failed;
++        rt = netcfg_start(NETCFG_TUYA_BLE, __netconn_wifi_netcfg_finish, NULL);
++        if (rt != OPRT_OK) goto config_failed;
+     }
+ #endif
+ 
++    netconn_wifi_config_unlock();
++    return rt;
++
++config_failed:
++    /* Already holding the lifecycle lock: stop/free the partial session and
++     * release an AP allocated before its start job could be submitted. Any
++     * queued starts drain with no session (or a different generation). */
++    netcfg_stop(NETCFG_STOP_ALL_CFG_MODULE);
++    if (ap_owned) ap_netcfg_abort_init();
++    netconn_wifi_config_unlock();
+     return rt;
+ }
+ 
+@@ -314,16 +346,20 @@ static OPERATE_RET __wifi_reset_event_cb(void *data)
+     tuya_iot_client_t *client = (tuya_iot_client_t *)data;
+     netmgr_conn_wifi_t *netmgr_wifi = &s_netmgr_wifi;
+ 
++    netconn_wifi_cancel_restore();
++
+     PR_DEBUG("__wifi_reset_event_cb");
+     tal_sw_timer_stop(netmgr_wifi->conn.timer);
+     netmgr_wifi->conn.stat = NETCONN_WIFI_CONN_STOP;
+     rt = tal_wifi_station_disconnect();
+     if (client->is_activated) {
+         tal_kv_del("netinfo");
++        TUYA_CALL_ERR_RETURN(wifi_request_begin(true));
+         memset(&netmgr_wifi->conn.wifi_conn_info, 0, sizeof(netmgr_wifi->conn.wifi_conn_info));
++        wifi_request_end();
+     } else {
+         // stop all netcfg
+-        rt = netcfg_stop(NETCFG_STOP_ALL_CFG_MODULE);
++        rt = netconn_wifi_stop_config();
+     }
+ 
+     return rt;
+@@ -345,6 +381,7 @@ OPERATE_RET netconn_wifi_open(void *config)
+     OPERATE_RET rt = OPRT_OK;
+ 
+     // init
++    TUYA_CALL_ERR_RETURN(wifi_request_init());
+     TUYA_CALL_ERR_RETURN(tal_wifi_init(__netconn_wifi_event));
+     TUYA_CALL_ERR_RETURN(tal_wifi_set_country_code(netmgr_wifi->ccode));
+ 
+@@ -410,9 +447,11 @@ OPERATE_RET netconn_wifi_set(netmgr_conn_config_type_e cmd, void *param)
+         break;
+     case NETCONN_CMD_SSID_PSWD: // set ssid&paswd will cause wifi
+                                 // disconnect&connect
++        TUYA_CALL_ERR_RETURN(wifi_request_begin(true));
+         memcpy(&netmgr_wifi->conn.wifi_conn_info, (netconn_wifi_info_t *)param, sizeof(netconn_wifi_info_t));
+-        __netconn_wifi_connect();
+-        break;
++        rt = __netconn_wifi_connect();
++        wifi_request_end();
++        return rt;
+     case NETCONN_CMD_COUNTRYCODE:
+         memcpy(netmgr_wifi->ccode, (char *)param, strlen((char *)param));
+         TUYA_CALL_ERR_RETURN(tal_wifi_set_country_code(netmgr_wifi->ccode));
+@@ -425,13 +464,16 @@ OPERATE_RET netconn_wifi_set(netmgr_conn_config_type_e cmd, void *param)
+         }
+     } break;
+     case NETCONN_CMD_CLOSE:
++        netconn_wifi_cancel_restore();
+         __netconn_wifi_disconnect();
+         break;
+ 
+     case NETCONN_CMD_RESET:
++        TUYA_CALL_ERR_RETURN(wifi_request_begin(true));
+         tal_kv_del("netinfo");
+         netmgr_wifi->conn.stat = NETCONN_WIFI_CONN_STOP;
+         memset(&netmgr_wifi->conn.wifi_conn_info, 0, sizeof(netmgr_wifi->conn.wifi_conn_info));
++        wifi_request_end();
+         tal_wifi_station_disconnect();
+         break;
+ 
+@@ -483,7 +525,9 @@ OPERATE_RET netconn_wifi_get(netmgr_conn_config_type_e cmd, void *param)
+         break;
+     case NETCONN_CMD_SSID_PSWD: // set ssid&paswd will cause wifi
+                                 // disconnect&connect
++        TUYA_CALL_ERR_RETURN(wifi_request_begin(false));
+         memcpy((netconn_wifi_info_t *)param, &netmgr_wifi->conn.wifi_conn_info, sizeof(netconn_wifi_info_t));
++        wifi_request_end();
+         break;
+     case NETCONN_CMD_COUNTRYCODE:
+         memcpy((char *)param, netmgr_wifi->ccode, strlen(netmgr_wifi->ccode));
+diff --git a/src/tuya_cloud_service/netmgr/netconn_wifi.h b/src/tuya_cloud_service/netmgr/netconn_wifi.h
+index 60f271e..00dadd5 100755
+--- a/src/tuya_cloud_service/netmgr/netconn_wifi.h
++++ b/src/tuya_cloud_service/netmgr/netconn_wifi.h
+@@ -126,6 +126,16 @@ OPERATE_RET netconn_wifi_close(void);
+  */
+ OPERATE_RET netconn_wifi_set(netmgr_conn_config_type_e cmd, void *param);
+ 
++/* A one-shot boot request yields to explicit/SDK ownership. The predicate is
++ * evaluated under the request task mutex and must not reenter these APIs. */
++OPERATE_RET netconn_wifi_restore_if_idle(const netconn_wifi_info_t *info, bool (*allowed)(void));
++void netconn_wifi_cancel_restore(void);
++OPERATE_RET netconn_wifi_stop_config(void);
++OPERATE_RET netconn_wifi_stop_config_type(int type);
++OPERATE_RET netconn_wifi_config_lock(void);
++void netconn_wifi_config_unlock(void);
++OPERATE_RET netconn_wifi_run_if_current(const char *ssid, OPERATE_RET (*run)(void *), void *arg);
++
+ /**
+  * @brief get wifi connection attribte
+  *

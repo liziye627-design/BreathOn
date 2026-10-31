@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "device_id": "nicemcu-demo-01",
+  "session_id": null,
+  "captured_at": "2026-10-30T10:00:00+00:00",
+  "state": "measuring",
+  "transport": "wifi",
+  "quality_flags": ["acetone_is_simulated", "humidity_not_calibrated"],
+  "metrics": {
+    "humidity_pct": {"value": 75.0, "unit": "%RH", "source": "sensor", "sensor_model": "SHT41-PROTOTYPE", "calibration": "uncalibrated", "quality": "unknown"},
+    "acetone_ppm": {"value": 1.2, "unit": "ppm", "source": "mock", "sensor_model": null, "calibration": "uncalibrated", "quality": "unknown"}
+  }
+}

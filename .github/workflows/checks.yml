@@ -1,0 +1,56 @@
+name: Source checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '11.7.0'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: node --experimental-strip-types --test tests/metabolism.test.ts
+  firmware-protocols:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hardware
+    steps:
+      - uses: actions/checkout@v4
+      - name: BLE protocol
+        run: |
+          gcc -std=c11 -Wall -Wextra -Werror -Ifirmware firmware/tests/test_ble_proto.c firmware/breathon_ble_proto.c -o /tmp/breathon-ble
+          /tmp/breathon-ble
+      - name: Audio wire protocol
+        run: |
+          gcc -std=c11 -Wall -Wextra -Werror -Ifirmware firmware/tests/test_realtime.c firmware/realtime_wire.c -o /tmp/breathon-realtime
+          /tmp/breathon-realtime
+      - name: App BLE parser
+        run: |
+          rustc --edition=2021 --test ../app/src-tauri/src/device/proto.rs -o /tmp/breathon-parser
+          /tmp/breathon-parser
+  services:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: astral-sh/setup-uv@v5
+      - run: uv venv
+      - run: uv pip install -r backend/requirements.txt -r backend/realtime-requirements.txt
+      - run: uv run --no-project python -m pytest tests -q

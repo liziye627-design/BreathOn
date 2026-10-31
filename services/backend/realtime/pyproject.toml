@@ -1,0 +1,44 @@
+[tool.basedpyright]
+typeCheckingMode = "all"
+pythonVersion = "3.11"
+venvPath = "../.."
+venv = ".venv"
+stubPath = "stubs"
+extraPaths = ["../..", "../../tests"]
+include = [".", "../../tests/test_realtime*.py"]
+exclude = ["probe.py", "credentials.py", "__pycache__"]
+# Exhaustive assert_never branches are intentional proof sites.
+reportUnnecessaryComparison = false
+# AnyIO 4.15 start_soon returns handles; task groups own their lifetime.
+reportUnusedCallResult = false
+# Multiline prompt/help text uses normal Python implicit concatenation.
+reportImplicitStringConcatenation = false
+
+[[tool.basedpyright.executionEnvironments]]
+root = "../../tests"
+# Direct event/queue seam tests intentionally exercise the private pump boundary.
+reportPrivateUsage = false
+
+[[tool.basedpyright.executionEnvironments]]
+root = "."
+
+[tool.ruff]
+target-version = "py311"
+line-length = 110
+extend-exclude = ["probe.py", "credentials.py"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+  "D203", "D213", # Use one-line class docstrings and first-line summaries.
+  "D101", "D102", "D105", "D107", # Self-describing typed schema/operation names.
+  "COM812", "ISC001", # Formatter owns layout.
+  "TRY003", # Public typed exceptions intentionally use sanitized enum codes.
+  "EM101", # Error arguments are typed stable codes, never remote prose.
+  "CPY001", # The project has no per-file copyright notice convention.
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/test_realtime*.py" = ["D", "S101", "PLR2004", "SLF001", "ARG", "INP001", "S107", "S610"]
+"commands.py" = ["RUF001"] # Chinese system instructions use Chinese punctuation.
+"upstream.py" = ["LOG001"] # Isolated logger prevents wire dumps via root DEBUG handlers.

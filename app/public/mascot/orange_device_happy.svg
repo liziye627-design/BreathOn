@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 285 385" role="img" aria-label="灵息橙色设备卡通角色 · happy">
+<defs><linearGradient id="shell" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#FF7E40"/><stop offset="0.55" stop-color="#FD5B29"/><stop offset="1" stop-color="#E9431E"/></linearGradient><linearGradient id="screen" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#07505D"/><stop offset="1" stop-color="#052E40"/></linearGradient></defs>
+<ellipse cx="142" cy="364" rx="94" ry="13" fill="#163E43" opacity="0.08"/>
+<g transform="translate(0 12)"><path d="M123 35V17A19 19 0 0 1 161 17V35" fill="none" stroke="#F15B2B" stroke-width="11" stroke-linecap="round"/>
+<path d="M65 131L22 156L38 167L15 182L48 214L73 195" fill="#14B9E6" stroke="#0A8DB4" stroke-width="3"/>
+<path d="M220 131L263 156L247 167L270 182L237 214L212 195" fill="#14B9E6" stroke="#0A8DB4" stroke-width="3"/>
+<rect x="58" y="36" width="169" height="297" rx="35" fill="url(#shell)" stroke="#E84B28" stroke-width="3"/>
+<path d="M68 68Q67 50 97 46H192" stroke="#FFAD84" stroke-width="7" opacity="0.65" fill="none" stroke-linecap="round"/>
+<path d="M142 54l8 16h-8l5 12-14-19h8z" fill="#00DDDF"/>
+<ellipse cx="106" cy="107" rx="22" ry="16" fill="#FFFFFF" transform="rotate(-6 106 107)"/>
+<ellipse cx="174" cy="107" rx="22" ry="16" fill="#FFFFFF" transform="rotate(9 174 107)"/>
+<path d="M100 109 Q108 97 116 109" fill="none" stroke="#073F50" stroke-width="6" stroke-linecap="round"/><path d="M166 109 Q174 97 182 109" fill="none" stroke="#073F50" stroke-width="6" stroke-linecap="round"/><path d="M124 136 Q142 163 160 136" fill="none" stroke="#043B4A" stroke-width="6" stroke-linecap="round"/>
+<rect x="80" y="170" width="125" height="141" rx="11" fill="#0B202B"/>
+<rect x="88" y="177" width="109" height="125" rx="5" fill="url(#screen)"/>
+<g stroke="#61F2EA" stroke-width="3" fill="none"><circle cx="142" cy="222" r="20"/><path d="M116 225h12l5-9 10 16 7-10h16"/></g>
+<text x="143" y="265" font-family="Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="18" font-weight="700" text-anchor="middle" fill="#FFFFFF">灵息</text>
+<text x="143" y="280" font-family="Arial, sans-serif" font-size="10" font-weight="600" text-anchor="middle" fill="#FFFFFF">Breath On</text>
+<path d="M88 291 Q111 277 140 292 T197 291V302H88Z" fill="#16C8C1" opacity="0.7"/></g>
+</svg>

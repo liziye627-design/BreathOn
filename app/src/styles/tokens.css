@@ -1,0 +1,33 @@
+:root {
+  --lx-brand-deep: #004A58;
+  --lx-brand-dark: #073F4F;
+  --lx-brand-cyan: #00CDD3;
+  --lx-brand-mint: #36D7C6;
+  --lx-brand-soft: #E7F8F6;
+  --lx-mascot-orange: #F95B2D;
+  --lx-mascot-blue: #19AFE5;
+  --lx-background: #FAFBFF;
+  --lx-surface: #FFFFFF;
+  --lx-surface-lavender: #F1F2FF;
+  --lx-surface-cream: #FFF6E7;
+  --lx-surface-mint: #E9FAF5;
+  --lx-surface-blue: #EEF5FF;
+  --lx-lavender-accent: #7E89F1;
+  --lx-lavender-soft: #DADCFB;
+  --lx-text-primary: #093846;
+  --lx-text-secondary: #7F8EA4;
+  --lx-text-tertiary: #A4AEC0;
+  --lx-border: #E8EDF3;
+  --lx-status-success: #0AAB8F;
+  --lx-status-warning: #E6A64F;
+  --lx-status-danger: #D95F60;
+  --lx-status-info: #537FC7;
+  --lx-radius-xs: 8px;
+  --lx-radius-sm: 12px;
+  --lx-radius-md: 16px;
+  --lx-radius-lg: 22px;
+  --lx-radius-xl: 28px;
+  --lx-radius-pill: 999px;
+  --lx-font: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
+  --lx-shadow-soft: 0 8px 24px rgba(23,63,77,.08);
+}

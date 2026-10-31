@@ -1,0 +1,111 @@
+@import "./tokens.css";
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%}
+body{
+  font-family:var(--lx-font);color:var(--lx-text-primary);
+  background:var(--lx-background) url("/bg/cloud_field.svg") no-repeat top center/cover fixed;
+  padding-top:env(safe-area-inset-top);
+}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(--lx-brand-cyan);outline-offset:2px}
+h1,h2,h3,p{margin:0}
+
+#app{max-width:480px;margin:0 auto;min-height:100vh;position:relative}
+.screen{padding:14px 18px calc(104px + env(safe-area-inset-bottom));animation:rise .28s ease both}
+.screen.flow{padding-bottom:calc(28px + env(safe-area-inset-bottom))}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* 顶栏 */
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;min-height:44px}
+.topbar .brand{height:38px;width:auto}
+.round-btn{width:44px;height:44px;border-radius:50%;background:#fff;box-shadow:var(--lx-shadow-soft);display:grid;place-items:center;position:relative}
+.round-btn .ic{width:22px;height:22px}
+.round-btn .dot{position:absolute;top:10px;right:11px;width:8px;height:8px;border-radius:50%;background:var(--lx-status-warning)}
+.top-actions{display:flex;gap:10px}
+
+/* 标题区 + 吉祥物 */
+.hero-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:12px}
+.hero-head h1{font-size:26px;line-height:1.25;font-weight:800;letter-spacing:.2px}
+.hero-head .lead{margin-top:8px;font-size:14px;line-height:1.55;color:var(--lx-text-secondary)}
+.hero-head .mascot{width:96px;flex:none;margin:-6px -4px -14px 0;animation:float 4s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
+/* 卡片 */
+.card{background:var(--lx-surface);border:1px solid var(--lx-border);border-radius:var(--lx-radius-xl);box-shadow:var(--lx-shadow-soft);padding:18px;margin-bottom:12px}
+.card.lavender{background:linear-gradient(135deg,#fbfbff,#f0f1ff)}
+.card.mint{background:var(--lx-surface-mint)}
+.card.cream{background:var(--lx-surface-cream)}
+.card.flat{box-shadow:none}
+.card-title{font-size:17px;font-weight:800}
+.card-sub{font-size:12px;color:var(--lx-text-secondary);margin-top:4px;line-height:1.5}
+.row{display:flex;align-items:center;gap:12px}
+.row.between{justify-content:space-between}
+.grow{flex:1;min-width:0}
+
+/* 按钮 */
+.btn{width:100%;min-height:52px;border-radius:var(--lx-radius-pill);font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .12s,opacity .2s}
+.btn:active{transform:scale(.98)}
+.btn.solid{background:var(--lx-brand-deep);color:#fff}
+.btn.outline{background:#fff;color:var(--lx-brand-deep);border:1px solid #aed8d7}
+.btn.soft{background:var(--lx-surface-lavender);color:var(--lx-lavender-accent)}
+.btn.danger{background:#fff;color:var(--lx-status-danger);border:1px solid #f0c9c9}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn .ic{width:22px;height:22px}
+
+/* 图标 */
+.ic{display:inline-block;width:24px;height:24px;vertical-align:middle;flex:none}
+.ic svg{width:100%;height:100%;display:block}
+
+/* 来源 / 状态标签 */
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:5px 11px;border-radius:var(--lx-radius-pill);white-space:nowrap}
+.tag.mock{background:#fff2dc;color:#8a5f1f}
+.tag.sensor{background:var(--lx-surface-mint);color:#147a71}
+.tag.manual{background:#eef0ff;color:#5f6ab0}
+.tag.none{background:#edf0f4;color:#68758a}
+.tag.ok{background:var(--lx-surface-mint);color:#147a71}
+.tag.warn{background:#fff2dc;color:#8a5f1f}
+.tag.bad{background:#fde9e9;color:#a63d3d}
+
+/* 大数值 */
+.value{display:flex;align-items:baseline;gap:6px;margin:8px 0 10px}
+.value b{font-size:52px;font-weight:800;line-height:1;letter-spacing:-1.5px;color:var(--lx-brand-deep)}
+.value small{font-size:18px;color:var(--lx-text-secondary);font-weight:500}
+.value.empty b{color:#b9c3d1}
+
+/* 提示条 */
+.notice{padding:12px 14px;border-radius:16px;background:#eff8f7;color:#32756d;font-size:13px;line-height:1.6}
+.notice.warn{background:#fff3e3;color:#8f6425}
+.notice .ic{width:18px;height:18px;margin-right:6px;vertical-align:-3px}
+
+/* 底部导航 */
+.bottom{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);
+  background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-radius:26px 26px 0 0;padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+  box-shadow:0 -8px 30px rgba(23,63,77,.1);z-index:5}
+.bottom[hidden]{display:none}
+.nav{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;color:#8a98ac;min-height:52px;justify-content:center}
+.nav .ic{width:26px;height:26px}
+.nav.active{color:var(--lx-lavender-accent);font-weight:700}
+.nav.active::after{content:"";width:5px;height:5px;border-radius:50%;background:var(--lx-lavender-accent);margin-top:1px}
+
+/* 开关 */
+.switch{width:54px;height:30px;border-radius:99px;background:#d0d8e0;padding:3px;flex:none;transition:background .2s;text-align:left}
+.switch i{display:block;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 4px #0002;transition:transform .2s}
+.switch[aria-checked="true"]{background:#22bdaa}
+.switch[aria-checked="true"] i{transform:translateX(24px)}
+
+/* 弹层 */
+.modal{position:fixed;inset:0;background:rgba(7,63,79,.45);display:flex;align-items:flex-end;justify-content:center;z-index:20;animation:fade .2s}
+@keyframes fade{from{opacity:0}}
+.sheet{background:#fff;border-radius:28px 28px 0 0;padding:24px 20px calc(24px + env(safe-area-inset-bottom));width:100%;max-width:480px;animation:rise .25s both}
+.sheet h3{font-size:19px;font-weight:800;margin-bottom:8px}
+.sheet p{font-size:14px;line-height:1.65;color:var(--lx-text-secondary)}
+.actions{display:grid;gap:10px;margin-top:16px}
+.toast{position:fixed;left:50%;bottom:112px;transform:translateX(-50%);background:var(--lx-brand-dark);color:#fff;padding:11px 18px;border-radius:99px;font-size:14px;z-index:30;max-width:88%;text-align:center}
+
+/* 表单 */
+.field{display:grid;gap:6px;margin-top:12px}
+.field label{font-size:13px;color:var(--lx-text-secondary)}
+.field input,.field textarea{font:inherit;font-size:16px;border:1px solid var(--lx-border);border-radius:14px;padding:12px 14px;background:#fff;color:var(--lx-text-primary);width:100%}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}

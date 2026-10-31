@@ -1,0 +1,15 @@
+#ifndef LV_CONF_H
+#define LV_CONF_H
+#define LV_COLOR_DEPTH 24
+#define LV_USE_OS LV_OS_NONE
+#define LV_MEM_SIZE (2 * 1024 * 1024)
+#define LV_USE_LOG 1
+#define LV_LOG_LEVEL LV_LOG_LEVEL_WARN
+#define LV_LOG_PRINTF 1
+#define LV_FONT_MONTSERRAT_12 1
+#define LV_FONT_MONTSERRAT_14 1
+#define LV_FONT_MONTSERRAT_32 1
+#define LV_USE_SYSMON 0
+#define LV_USE_PERF_MONITOR 0
+#define LV_USE_MEM_MONITOR 0
+#endif

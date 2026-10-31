@@ -1,0 +1,56 @@
+/* 参考图量出的设计变量。参考图归一宽度 780px = 390 CSS px，下面坐标均已 ÷2。 */
+:root {
+  --text: #0b2438;          /* 标题/正文深青 */
+  --text-light: #6b7a96;    /* 副标题、辅助文字 */
+  --card: #ffffff;
+  --primary: #134253;       /* 主按钮深青 */
+  --accent: #6b7cfb;        /* 选中蓝紫 */
+  --accent-soft: #c6c2fd;   /* 进度环紫 */
+  --ring-track: #f6f0e4;    /* 进度环底轨 */
+  --meal: #a393fd;
+  --activity: #19d4b0;
+  --weight: #feb93a;
+  --water: #549cfe;
+  --bg-top: #f0f3fe;
+  --bg-mid: #f4f6fb;
+  --bg-bottom: #fcf7ee;
+  --ref-title: #0b2438;
+  --ref-btn: #134253;
+  --ref-sub: #7d8aa3;
+  --ref-dot: #8c97f5;
+  --ref-dot-off: #dfe2f6;
+}
+
+.brand-row { display: flex; align-items: center; gap: 6px; }
+.brand-row img { width: 44px; height: auto; display: block; }
+.brand-row .zh { font-size: 22px; font-weight: 700; line-height: 1.1; color: var(--ref-title); letter-spacing: 1px; }
+.brand-row .en { font-size: 13px; font-weight: 500; line-height: 1.2; color: #0d5c70; }
+
+/* ---------- 欢迎页 ---------- */
+.page.welcome {
+  position: relative; min-height: 100vh; overflow: hidden; padding: 0;
+  background: linear-gradient(180deg, #f2f3fd 0%, #f7f8fe 55%, #fdfcfb 100%); display: block;
+}
+.welcome .brand-top { position: absolute; top: calc(52px + env(safe-area-inset-top)); left: 0; right: 0; display: flex; justify-content: center; }
+.welcome .scene {
+  position: absolute; top: 125px; left: 0; right: 0;
+  -webkit-mask-image: linear-gradient(180deg, #000 82%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 82%, transparent 100%);
+}
+.welcome .scene img { display: block; width: 100%; height: auto; }
+.welcome .copy { position: absolute; left: 0; right: 0; top: 535px; text-align: center; padding: 0 12px; }
+.welcome h1 { font-size: 36px; line-height: 49px; font-weight: 800; color: var(--ref-title); margin: 0; letter-spacing: .5px; }
+.welcome .copy p { font-size: 18px; line-height: 27px; color: var(--ref-sub); margin: 12px 0 0; }
+.welcome .cta {
+  position: absolute; left: 27px; right: 27px; top: 748px; height: 56px; border-radius: 999px;
+  background: var(--ref-btn); color: #fff; font-size: 18px; font-weight: 500; letter-spacing: 1px;
+  display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 24px rgba(18, 71, 91, .22);
+}
+.welcome .cta .ic { position: absolute; right: 20px; width: 24px; height: 24px; }
+.welcome .dots { position: absolute; left: 0; right: 0; top: 826px; display: flex; justify-content: center; gap: 9px; }
+.welcome .dots i { width: 13px; height: 7px; border-radius: 4px; background: var(--ref-dot-off); }
+.welcome .dots i.on { background: var(--ref-dot); }
+@media (max-height: 860px) {
+  .welcome .cta { top: auto; bottom: calc(56px + env(safe-area-inset-bottom)); }
+  .welcome .dots { top: auto; bottom: calc(30px + env(safe-area-inset-bottom)); }
+}

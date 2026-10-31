@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "device_id": "nicemcu-demo-01",
+  "session_id": null,
+  "captured_at": "2026-10-30T10:00:00+00:00",
+  "state": "measuring",
+  "transport": "mock_script",
+  "quality_flags": ["synthetic_data", "not_for_clinical_use"],
+  "metrics": {
+    "acetone_ppm": {"value": 1.2, "unit": "ppm", "source": "mock", "sensor_model": null, "calibration": "uncalibrated", "quality": "unknown"},
+    "co2_pct": {"value": 4.1, "unit": "%", "source": "mock", "sensor_model": null, "calibration": "uncalibrated", "quality": "unknown"},
+    "humidity_pct": {"value": 82.0, "unit": "%RH", "source": "mock", "sensor_model": null, "calibration": "uncalibrated", "quality": "unknown"}
+  }
+}

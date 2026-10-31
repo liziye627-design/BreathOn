@@ -1,0 +1,8 @@
+# Python 3.11; independent from the existing backend's dependency policy.
+anyio>=4.14,<5
+pydantic>=2.13,<3
+openai>=3.42,<4
+websockets==17.4
+soxr==1.1.0
+numpy>=2.4,<3
+typing-extensions>=4.12,<5

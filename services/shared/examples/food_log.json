@@ -1,0 +1,10 @@
+{
+  "user_id": "demo-user",
+  "kind": "meal",
+  "text": "演示：米饭、鸡肉和西兰花（人工输入，未计算营养值）",
+  "occurred_at": "2026-10-30T12:00:00+08:00",
+  "payload": {"food_names": ["米饭", "鸡肉", "西兰花"], "portion_status": "not_confirmed"},
+  "source": "mock",
+  "needs_confirmation": true,
+  "image_id": null
+}

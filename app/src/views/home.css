@@ -1,0 +1,115 @@
+/* 首页：02_home 逐元素实测，归一图 780px = CSS 390px，下面的值均已 ÷2。 */
+.page.home {
+  position: relative;
+  padding: 0;
+  min-height: 876px;
+  background: linear-gradient(180deg, #f0f3fe 0%, #f4f6fb 28%, #fcfcfd 56%, #fcf7ee 92%);
+  overflow: hidden;
+}
+.page.home > * { position: absolute; }
+
+/* logo：left 18 top 59，43×40；文字 灵息 left 71.5 top 62 / Breath On top 86 */
+.home .brand { left: 17.5px; top: 59px; }
+.home .brand img { position: absolute; left: 0; top: 0; width: 43px; height: 40px; }
+.home .brand-zh { position: absolute; left: 54px; top: 3px; font-size: 21px; font-weight: 700; line-height: 22px; color: var(--text); white-space: nowrap; }
+.home .brand-en { position: absolute; left: 54px; top: 27px; font-size: 12px; line-height: 14px; color: #0d5c70; white-space: nowrap; }
+
+/* 通知铃：白色圆 right 14 top 59，直径 42 */
+.home .bell {
+  right: 14px; top: 59px; width: 42px; height: 42px; border-radius: 50%; background: #fff;
+  display: grid; place-items: center; box-shadow: 0 4px 14px rgba(70, 90, 150, .08);
+}
+.home .bell .ic { width: 24px; height: 24px; color: var(--text); }
+.home .bell::after { content: ""; position: absolute; top: 8px; right: 9px; width: 7px; height: 7px; border-radius: 50%; background: #7e9bff; }
+
+/* 问候：top 129.5 两行，字号 32 行高 40；副标题 top 217 字号 17 */
+.home .greeting { left: 23.5px; top: 126px; font-size: 32px; line-height: 40px; font-weight: 800; color: var(--text); letter-spacing: .5px; }
+.home .subtext { left: 23.5px; top: 213px; font-size: 17px; line-height: 24px; color: var(--text-light); white-space: nowrap; }
+
+/* 右上角吉祥物场景 */
+.home .hero-scene { left: 240px; top: 97.5px; width: 150px; height: 182.5px; pointer-events: none; }
+
+/* 主卡片：left 12.5 right 12 top 260 bottom 497 */
+.home .kpi-card {
+  left: 12.5px; right: 12px; top: 260px; height: 237px; border-radius: 24px;
+  background: linear-gradient(180deg, #eef0fe 0%, #eceffd 60%, #f1f3fe 100%);
+  box-shadow: 0 8px 28px rgba(110, 125, 200, .1), inset 0 0 0 1.5px rgba(255, 255, 255, .85);
+  overflow: hidden;
+}
+.home .kpi-deco { position: absolute; left: 165px; top: 16px; width: 200px; height: 119px; pointer-events: none; }
+.home .kpi-label { position: absolute; left: 28px; top: 28px; font-size: 16px; line-height: 20px; color: var(--text); font-weight: 500; white-space: nowrap; }
+.home .kpi-info { position: absolute; left: 131px; top: 28px; width: 17px; height: 17px; border-radius: 50%; border: 1.5px solid #a3acc4; color: #a3acc4; font-size: 11px; line-height: 14px; text-align: center; font-weight: 700; }
+.home .kpi-value { position: absolute; left: 27px; top: 46px; font-size: 64px; line-height: 70px; font-weight: 800; color: var(--text); letter-spacing: -1px; }
+.home .kpi-unit { position: absolute; left: 130px; top: 92px; font-size: 20px; line-height: 24px; color: var(--text-light); font-weight: 500; }
+.home .kpi-pill {
+  position: absolute; left: 20px; top: 109px; height: 31px; padding: 0 16px 0 12px; border-radius: 16px; background: #c9f7fa;
+  display: flex; align-items: center; gap: 7px; font-size: 14px; color: var(--text); white-space: nowrap;
+}
+.home .kpi-pill .ic { width: 16px; height: 16px; color: #00c9d4; }
+.home .kpi-compare { position: absolute; right: 31px; top: 125px; display: flex; align-items: center; gap: 6px; font-size: 13px; color: #556984; white-space: nowrap; }
+.home .kpi-compare .ic { width: 16px; height: 16px; color: #05d7e0; }
+.home .kpi-btn {
+  position: absolute; left: 18.5px; right: 18.5px; top: 168px; height: 52px; border-radius: 26px; background: #134253;
+  color: #fff; font-size: 18px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 14px;
+  box-shadow: 0 6px 18px rgba(19, 66, 83, .25);
+}
+.home .kpi-btn .ic { width: 22px; height: 22px; }
+.home .kpi-btn .arrow { position: absolute; right: 22px; }
+
+/* 今日进度卡：left 12.5 right 12 top 508 bottom 698，白色 */
+.home .progress-card {
+  left: 12.5px; right: 12px; top: 508px; height: 190px; border-radius: 22px; background: #fff;
+  box-shadow: 0 6px 24px rgba(120, 130, 170, .08);
+}
+.home .progress-title { position: absolute; left: 20px; top: 20px; font-size: 20px; line-height: 24px; font-weight: 800; color: var(--text); }
+.home .progress-tip { position: absolute; right: 17px; top: 24px; font-size: 14px; line-height: 18px; color: var(--text-light); display: flex; align-items: center; gap: 2px; white-space: nowrap; }
+.home .progress-tip .ic { width: 14px; height: 14px; color: #8996b0; }
+
+/* 环：left 30 top 565 直径 115 线宽 8（浅紫），底轨奶油色 */
+.home .day-ring { position: absolute; left: 17.5px; top: 57px; width: 116px; height: 116px; }
+.home .day-ring svg { width: 116px; height: 116px; }
+.home .ring-pct { position: absolute; left: 0; right: 0; top: 36px; text-align: center; font-size: 28px; font-weight: 800; line-height: 32px; color: var(--text); }
+.home .ring-pct small { font-size: 18px; font-weight: 700; }
+.home .ring-cap { position: absolute; left: 0; right: 0; top: 70px; text-align: center; font-size: 13px; color: var(--text-light); }
+
+/* 4 个小卡：左列 left 161 右列 left 267，宽 96，高 56；行 top 558 / 624 */
+.home .mini { position: absolute; width: 96px; height: 56px; border-radius: 14px; display: flex; align-items: center; gap: 8px; padding-left: 12px; }
+.home .mini .ic { width: 22px; height: 22px; flex: none; }
+.home .mini .lab { font-size: 14px; line-height: 18px; color: var(--text); font-weight: 500; }
+.home .mini .val { font-size: 14px; line-height: 18px; color: var(--text); font-weight: 600; white-space: nowrap; }
+.home .mini .val small { font-size: 11px; color: var(--text-light); font-weight: 500; }
+.home .mini.meal { left: 161px; top: 50px; background: #f7f5fe; } .home .mini.meal .ic { color: var(--meal); }
+.home .mini.act  { left: 267px; top: 50px; background: #f0fbf9; } .home .mini.act .ic { color: var(--activity); }
+.home .mini.wt   { left: 161px; top: 116px; background: #fef9ee; } .home .mini.wt .ic { color: var(--weight); }
+.home .mini.wtr  { left: 267px; top: 116px; background: #f3f7fd; } .home .mini.wtr .ic { color: var(--water); }
+
+/* 底部吉祥物对话：气泡 left 121 top 718 right 20 高 80 */
+.home .tip-mascot { left: 5px; top: 692px; width: 126px; height: 123px; pointer-events: none; }
+.home .tip-bubble {
+  left: 121px; right: 20px; top: 718px; height: 82px; border-radius: 22px; background: #fffdfb;
+  box-shadow: 0 4px 16px rgba(220, 180, 120, .1);
+}
+.home .tip-title { position: absolute; left: 16px; top: 11px; font-size: 17px; font-weight: 800; color: var(--text); line-height: 22px; }
+.home .tip-text { position: absolute; left: 16px; top: 36px; right: 14px; font-size: 14.5px; line-height: 21px; color: var(--text-light); }
+
+/* 气体 → 热量估算块：主卡片右上，压在装饰图上方 */
+.home .kpi-deco { opacity: .45; }
+.home .kpi-kcal { position: absolute; right: 20px; top: 22px; text-align: right; }
+.home .kcal-cap { font-size: 12px; line-height: 16px; color: var(--text-light); white-space: nowrap; }
+.home .kcal-val { font-size: 32px; line-height: 38px; font-weight: 800; color: var(--text); letter-spacing: -.5px; }
+.home .kcal-val small { font-size: 13px; font-weight: 600; color: var(--text-light); margin-left: 3px; }
+.home .kcal-sub { font-size: 11.5px; line-height: 15px; color: #556984; white-space: nowrap; }
+.home .kcal-tag {
+  display: inline-block; margin-top: 5px; padding: 1px 7px; border-radius: 8px;
+  font-size: 10.5px; line-height: 16px; color: #8a6a1f; background: #fff3d6;
+}
+
+/* 分级配色（只表示区间，不表示好坏） */
+.home .kpi-pill.tone-low  { background: #e6f0fb; } .home .kpi-pill.tone-low .ic  { color: #549cfe; }
+.home .kpi-pill.tone-mild { background: #c9f7fa; } .home .kpi-pill.tone-mild .ic { color: #00c9d4; }
+.home .kpi-pill.tone-up   { background: #ece8ff; } .home .kpi-pill.tone-up .ic   { color: #8b7bf5; }
+.home .kpi-pill.tone-high { background: #fff0d9; } .home .kpi-pill.tone-high .ic { color: #e4a23a; }
+
+/* 单位跟在数值后面，数值变宽时不重叠 */
+.home .kpi-value { display: flex; align-items: baseline; white-space: nowrap; }
+.home .kpi-value .kpi-unit { position: static; margin-left: 6px; }
